@@ -40,7 +40,7 @@ class BinOp:
 
 # This is hacky and obviously shouldn't be used in a real interpreter
 # It also means there's no concept of scope
-vars = {}
+variables = {}
 
 
 class VarDeclare:
@@ -53,7 +53,7 @@ class VarDeclare:
         return "%r = %r" % (self.name, self.value)
 
     def eval(self):
-        vars[self.name] = self.value
+        variables[self.name] = self.value
         return None
 
 
@@ -66,7 +66,7 @@ class VarAccess:
         return "VarAccess(%r)" % self.name
 
     def eval(self):
-        return vars[self.name].eval()
+        return variables[self.name].eval()
 
 
 class Block:
