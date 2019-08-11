@@ -3,10 +3,21 @@
 The 'eval()' methods act like a tiny built-in AST interpreter
 I'm thinking in the future there will be a 'type()' method that returns the type of the expression, for type checking & inference
 """
+
+
 import operator
 
 
-class Literal:
+class DictEq:
+    """A base class that will implement the __eq__ method the right way"""
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+
+class Literal(DictEq):
     def __init__(self, value):
         self.value = value
 
@@ -17,8 +28,9 @@ class Literal:
         return self.value
 
 
-class BinOp:
+class BinOp(DictEq):
     """A binary operation (e.g. *, +, ...)"""
+
     def __init__(self, lhs, op, rhs):
         """`op` is a str"""
         self.op = op
@@ -43,8 +55,11 @@ class BinOp:
 variables = {}
 
 
-class VarDeclare:
-    """A variable declaration. The way it works right now, it can be a variable assignment as well"""
+
+class VarDeclare(DictEq):
+    """A variable declaration.
+    The way it works right now, it also can be a variable assignment"""
+
     def __init__(self, name, value):
         self.name = name
         self.value = value
@@ -54,10 +69,10 @@ class VarDeclare:
 
     def eval(self):
         variables[self.name] = self.value
-        return None
+        return self.value
 
 
-class VarAccess:
+class VarAccess(DictEq):
     """A use of a variable"""
     def __init__(self, name):
         self.name = name
@@ -69,8 +84,10 @@ class VarAccess:
         return variables[self.name].eval()
 
 
-class Block:
-    """A block of several expressions. The last one is the return value of the block"""
+class Block(DictEq):
+    """A block containing expressions.
+    The last one is used as the return value of the block"""
+
     def __init__(self, *exprs):
         self.exprs = exprs
 
