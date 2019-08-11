@@ -1,15 +1,15 @@
-# The Abstract Syntax Tree
+""" The Abstract Syntax Tree
 
-# The 'eval()' methods act like a tiny built-in AST interpreter
-# I'm thinking in the future there will be a 'type()' method
-#  that returns the type of the expression, for type checking & inference
+The 'eval()' methods act like a tiny built-in AST interpreter
+I'm thinking in the future there will be a 'type()' method that returns the type of the expression, for type checking & inference
+"""
 
 
 import operator
 
 
 class DictEq:
-    "A base class that will implement the __eq__ method the right way"
+    """A base class that will implement the __eq__ method the right way"""
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -29,10 +29,10 @@ class Literal(DictEq):
 
 
 class BinOp(DictEq):
-    "A binary operation (e.g. *, +, ...)"
+    """A binary operation (e.g. *, +, ...)"""
 
     def __init__(self, lhs, op, rhs):
-        "`op` is a str"
+        """`op` is a str"""
         self.op = op
         self.lhs = lhs
         self.rhs = rhs
@@ -52,7 +52,8 @@ class BinOp(DictEq):
 
 # This is hacky and obviously shouldn't be used in a real interpreter
 # It also means there's no concept of scope
-vars = {}
+variables = {}
+
 
 
 class VarDeclare(DictEq):
@@ -67,13 +68,12 @@ class VarDeclare(DictEq):
         return "%r = %r" % (self.name, self.value)
 
     def eval(self):
-        vars[self.name] = self.value
+        variables[self.name] = self.value
         return self.value
 
 
 class VarAccess(DictEq):
-    "A use of a variable"
-
+    """A use of a variable"""
     def __init__(self, name):
         self.name = name
 
@@ -81,7 +81,7 @@ class VarAccess(DictEq):
         return "VarAccess(%r)" % self.name
 
     def eval(self):
-        return vars[self.name].eval()
+        return variables[self.name].eval()
 
 
 class Block(DictEq):
