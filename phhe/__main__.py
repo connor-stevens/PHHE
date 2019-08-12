@@ -1,4 +1,5 @@
 import argparse
+from .parse import parse_file
 
 
 argument_parser = argparse.ArgumentParser(
@@ -21,4 +22,7 @@ argument_parser.add_argument(
 
 arguments = argument_parser.parse_args()
 
-file = open(arguments["file"]).read()
+# Load the file in and interpret it
+path = arguments.file
+tree = parse_file(path)
+print(tree.eval())
