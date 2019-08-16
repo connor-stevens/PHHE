@@ -16,6 +16,56 @@ class DictEq:
             return self.__dict__ == other.__dict__
         return False
 
+reservedTags = ["primitive", "struct"]
+primitiveTypes = ["type", "struct", "int", "null"]
+NULL = {"primitive":"null"}
+
+
+class TypePrimitive(DictEq):
+    def __init__(self, type):
+        if type in primitiveTypes:
+            self.primitive = type
+        else:
+            raise Exception("%r is not a primitive type" % r)
+
+    def __repr__(self):
+        return "TypePrimitive(%r)" % self.primitive
+
+    def eval(self):
+        return self.type
+
+    def type(self):
+        return {"primitive":"type"}
+
+class TypeTag(DictEq):
+    def __init__(self, key, val):
+        if key != "primitive":
+            self.type = {key:val}
+        else:
+            raise "Cannot use primitive as a type Tag."
+
+    def __repr__(self):
+        return "Typetag(%r)" % self.type["tag"][0]
+
+    def eval(self):
+        return self.type
+
+    def type(self):
+        return {"primitive":"type"}
+
+class TypeUserDef(DictEq):
+    def __init__(self, name):
+        self.name = name
+        self.type = {"primitive":"struct", "struct":name}
+
+    def __repr__(self):
+        return "TypeUserDef(%r)" % self.name
+
+    def eval(self):
+        return self.type
+
+    def type(self):
+        return {"primitive":"type"}
 
 class Literal(DictEq):
     def __init__(self, value):
@@ -26,6 +76,9 @@ class Literal(DictEq):
 
     def eval(self):
         return self.value
+
+    def type(self):
+        return {"primitive":type(self.value).__name__}
 
 
 class BinOp(DictEq):
@@ -49,6 +102,16 @@ class BinOp(DictEq):
         }
         return ops.get(self.op)(self.lhs.eval(), self.rhs.eval())
 
+    def type(self):
+        lhsType = self.lhs.type()
+        rhsType = self.rhs.type()
+        if lhsType == rhsType:
+            return lhsType
+        else:
+            #Not sure if this is the how we want to do this
+            return NULL
+
+
 
 # This is hacky and obviously shouldn't be used in a real interpreter
 # It also means there's no concept of scope
@@ -70,6 +133,8 @@ class VarDeclare(DictEq):
         vars[self.name] = self.value
         return self.value
 
+    def type(self):
+        return NULL
 
 class VarAccess(DictEq):
     "A use of a variable"
@@ -82,6 +147,9 @@ class VarAccess(DictEq):
 
     def eval(self):
         return vars[self.name].eval()
+
+    def type(self):
+        return NULL
 
 
 class Block(DictEq):
@@ -104,3 +172,6 @@ class Block(DictEq):
         for i in self.exprs:
             ret = i.eval()
         return ret
+
+    def type(self):
+        return NULL
