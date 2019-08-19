@@ -78,7 +78,7 @@ def binop():
 @generate
 def expr():
     "Parses any expression"
-    r = yield var_declare | binop
+    r = yield var_declare | call | binop
     return r
 
 
@@ -106,6 +106,13 @@ def block():
     yield string('}') << space
     return r
 
+@generate
+def call():
+    f = yield identifier << space
+    yield string('(') << space
+    x = yield expr
+    yield string(')') << space
+    return Call(f,x)
 
 # This needs to be specified last, to be able to refer to `expr`
 paren = string('(') >> expr << string(')') << space

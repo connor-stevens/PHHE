@@ -109,6 +109,25 @@ class Literal(DictEq):
         return {"primitive": type(self.value).__name__}
 
 
+class Call(DictEq):
+    """A function call `f(x)`"""
+
+    def __init__(self, function, args):
+        self.function = function
+        self.args = args
+
+    def __repr__(self):
+        return "%r(%r)" % (self.function, self.args)
+
+    def eval(self, ctx):
+        raise NotImplementedError(
+            "We can't support calling functions until we have functions!")
+
+    def type(self, ctx):
+        raise NotImplementedError(
+            "We can't support calling functions until we have functions!")
+
+
 class BinOp(DictEq):
     """A binary operation (e.g. *, +, ...)"""
 
