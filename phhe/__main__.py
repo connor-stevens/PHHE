@@ -1,9 +1,10 @@
 import argparse
-from .parse import parse_file
+from .parse import parse_file, Context
 
 
 argument_parser = argparse.ArgumentParser(
-    description="Used to compile phhe code",  # TODO we need a name for the language
+    # TODO we need a name for the language
+    description="Used to compile phhe code",
     epilog="Created by conner, Lorxu & xedre"
 )
 
@@ -25,4 +26,4 @@ arguments = argument_parser.parse_args()
 # Load the file in and interpret it
 path = arguments.file
 tree = parse_file(path)
-print(tree.eval())
+print(tree.eval(Context()))

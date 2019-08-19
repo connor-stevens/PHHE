@@ -86,7 +86,7 @@ def expr():
 def exprs():
     """This returns a block in the AST, but it doesn't parse {}.
     That way, it can also be used for top level statements"""
-    spaceN = regex(r'\s*')
+    spaceN = regex(r'(#[^\n]*|\s)*')
     yield spaceN
     es = []
     while True:

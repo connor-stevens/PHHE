@@ -18,7 +18,7 @@ class TestInterpreter(TestCase):
                 VarDeclare('x', BinOp(Literal(4), '+', Literal(5))),
                 Literal('string literal'),
                 VarAccess('x')
-            ).eval(),
+            ).eval(Context()),
             9
         )
 
@@ -27,12 +27,12 @@ class TestInterpreter(TestCase):
             # 2 + (4 - 1)
             BinOp(Literal(2),
                   '+',
-                  BinOp(Literal(4), '-', Literal(1))).eval(),
+                  BinOp(Literal(4), '-', Literal(1))).eval(Context()),
             5
         )
 
     def test_file(self):
         self.assertEqual(
-            parse_file('tests/test.ph').eval(),
+            parse_file('tests/test.ph').eval(Context()),
             308
         )
