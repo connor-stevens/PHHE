@@ -34,4 +34,6 @@ dest = open(dest_path, 'w')
 dest.write(str(codegen([tree])))
 
 # And print the evaluated result
-print(tree.eval(Context()))
+ret = tree.eval(Context())
+if ret is not None:
+    print(ret)

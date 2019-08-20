@@ -47,7 +47,7 @@ def var_declare():
 @generate
 def mul_div():
     "Note that this function also matches simple expressions"
-    simple = literal | block | var_access | paren
+    simple = literal | block | call | var_access | paren
     lhs = yield simple
     while True:
         # We have to do this instead of recursion for left-associativity
@@ -78,7 +78,7 @@ def binop():
 @generate
 def expr():
     "Parses any expression"
-    r = yield var_declare | call | binop
+    r = yield fun | var_declare | binop
     return r
 
 
@@ -86,6 +86,7 @@ def expr():
 def exprs():
     """This returns a block in the AST, but it doesn't parse {}.
     That way, it can also be used for top level statements"""
+    # Spaces, newlines, and comments
     spaceN = regex(r'(#[^\n]*|\s)*')
     yield spaceN
     es = []
@@ -106,13 +107,65 @@ def block():
     yield string('}') << space
     return r
 
+
 @generate
 def call():
     f = yield identifier << space
     yield string('(') << space
     x = yield expr
     yield string(')') << space
-    return Call(f,x)
+    return Call(f, x)
+
+
+@generate
+def type_dec():
+    # I have no idea what syntax we want for this
+    # This is just Python dictionary syntax (without ',') for now
+    # Also, will you have to specify 'primitive', or will that be the default?
+    yield string('{') << space
+    ret = {}
+    while True:
+        key = yield (identifier | success('')) << space
+        if key:
+            yield string(':') << space
+            value = yield identifier << space
+            ret[key] = value
+        else:
+            break
+    yield string('}') << space
+    return ret
+
+
+@generate
+def fun():
+    """Parses functions like `fun f(x) = x + 1`"""
+
+    yield string('fun') << space
+    name = yield identifier << space
+
+    yield string('(') << space
+    args = None
+    arg_name = yield (identifier | success('')) << space
+    if arg_name:
+        yield string(':') << space
+        arg_type = yield type_dec
+        args = (arg_name, arg_type)
+    yield string(')') << space
+
+    # You can omit the return type, and we'll try to guess it from the body
+    ret_type = None
+    q = yield (string(':') | success('')) << space
+    if q:
+        ret_type = yield type_dec
+
+    # We allow functions without bodies, so you can declare C functions
+    q = yield (string('=') | success('')) << space
+    if q:
+        body = yield expr
+        return Function(name, args, body, ret_type)
+    else:
+        return Function(name, args, None, ret_type)
+
 
 # This needs to be specified last, to be able to refer to `expr`
 paren = string('(') >> expr << string(')') << space
