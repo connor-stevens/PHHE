@@ -58,3 +58,17 @@ x = x / 3 # 4
 print(test(x))
 ''')
         self.assertEqual(output, '6\n')
+
+    def test_if(self):
+        output = compile_and_run('''
+fun not(x: {primitive: float}) = if x then 0 else 1
+
+if not(1.5) then {
+    print(4)
+    print(5)
+}
+if not(0) then print(6)
+if 1 + 2 then print(12) else print(13)
+if 12 / 2 - 6 then print(14) else print(15)
+''')
+        self.assertEqual(output, '6\n12\n15\n')

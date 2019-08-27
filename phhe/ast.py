@@ -109,6 +109,38 @@ class Literal(DictEq):
         return {"primitive": type(self.value).__name__}
 
 
+class If(DictEq):
+    """This language currently only has numbers, so that's the condition.
+       The else branch is run if the condition is 0, otherwise the if branch is run."""
+
+    def __init__(self, cond, if_branch, else_branch=None):
+        self.cond = cond
+        self.if_branch = if_branch
+        self.else_branch = else_branch
+
+    def __repr__(self):
+        return "if (%r) then (%r) else (%r)" % (self.cond, self.if_branch,
+                                                self.else_branch)
+
+    def eval(self, ctx):
+        cond = self.cond.eval(ctx)
+        if cond != 0:
+            return self.if_branch.eval(ctx)
+        elif self.else_branch is not None:
+            return self.else_branch.eval(ctx)
+
+    def type(self, ctx):
+        if self.else_branch is not None:
+            # It doesn't return anything if there isn't an else branch
+            t1 = self.if_branch.type(ctx)
+            t2 = self.else_branch.type(ctx)
+            if t1 == t2:
+                return t1
+            else:
+                raise TypeError("Incompatible types for 'if' branches: %r and %r"
+                                % (t1, t2))
+
+
 class Function(DictEq):
     """A function definition"""
 
