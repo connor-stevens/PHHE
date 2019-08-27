@@ -78,7 +78,7 @@ def binop():
 @generate
 def expr():
     "Parses any expression"
-    r = yield fun | var_declare | binop
+    r = yield fun | if_expr | var_declare | binop
     return r
 
 
@@ -165,6 +165,20 @@ def fun():
         return Function(name, args, body, ret_type)
     else:
         return Function(name, args, None, ret_type)
+
+
+@generate
+def if_expr():
+    yield string('if') << space
+    cond = yield expr
+    yield string('then') << space
+    if_branch = yield expr
+    has_else = yield (string('else') | success('')) << space
+    if has_else:
+        else_branch = yield expr
+    else:
+        else_branch = None
+    return If(cond, if_branch, else_branch)
 
 
 # This needs to be specified last, to be able to refer to `expr`

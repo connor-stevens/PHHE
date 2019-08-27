@@ -1,6 +1,6 @@
 from context import *
 from phhe.ast import *
-from phhe.parse import parse_file
+from phhe.parse import *
 
 
 class TestInterpreter(TestCase):
@@ -37,3 +37,14 @@ class TestInterpreter(TestCase):
             parse_file('tests/test.ph').eval(Context()),
             308
         )
+
+    def test_if(self):
+        self.assertEqual(
+            if_expr.parse('if 0 then 1 else 2').eval(Context()),
+            2
+        )
+        self.assertEqual(
+            if_expr.parse('if 1.2 then 21').eval(Context()),
+            21
+        )
+        self.assertIsNone(if_expr.parse('if 0.0 then 12').eval(Context()))

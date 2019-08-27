@@ -53,3 +53,9 @@ class TestParse(TestCase):
             Literal(9),
             VarAccess('x')
         ))
+
+    def test_if(self):
+        self.assertEqual(if_expr.parse('if 0 then 1 else 2'),
+                         If(Literal(0), Literal(1), Literal(2)))
+        self.assertEqual(if_expr.parse('if 12.3 then print(55)'),
+                         If(Literal(12.3), Call('print', Literal(55))))

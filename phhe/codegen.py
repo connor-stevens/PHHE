@@ -4,15 +4,29 @@
 from .ast import *
 
 
+class CBlock:
+    def __init__(self):
+        self.exprs = []
+
+    def add(self, node):
+        self.exprs.append(node)
+
+    def __str__(self):
+        ret = ' {\n'
+
+        for i in self.exprs:
+            ret += '\t%s;\n' % i
+
+        ret += '}\n'
+        return ret
+
+
 class CFunction:
     def __init__(self, name, args=None, ret_type=None):
-        self.block = []
+        self.block = CBlock()
         self.name = name
         self.args = args
         self.ret_type = ret_type
-
-    def add(self, node):
-        self.block.append(node)
 
     def __str__(self):
         arg_str = ""
@@ -24,12 +38,8 @@ class CFunction:
             ret_type = 'void'
         ret = "%s %s(%s)" % (ret_type, self.name, arg_str)
 
-        if self.block:
-            ret += ' {\n'
-            for i in self.block:
-                ret += '\t' + i + ';\n'
-
-            ret += '}\n'
+        if self.block.exprs:
+            ret += ' %s' % self.block
             return ret
         else:
             ret += ';\n'
@@ -39,6 +49,7 @@ class CFunction:
 class Module:
     def __init__(self):
         self.functions = [CFunction('main', ret_type={'primitive': 'int'})]
+        self.block = [self.functions[0].block]
         self.type_ctx = Context()
         self.name_ctx = Context()
 
@@ -46,7 +57,6 @@ class Module:
         self.type_ctx.add_binding('print', Function(
             'print', ('i', {'primitive': 'int'}), None, None).type(self.type_ctx))
 
-        self.func = [0]
         self.var_number = 0
 
     def push(self):
@@ -77,12 +87,20 @@ class Module:
         self.name_ctx.add_binding(node.name, node.name)
         self.type_ctx.add_binding(node.name, node_type)
 
+    def start_block(self):
+        block = CBlock()
+        self.block[-1].add(block)
+        self.block.append(block)
+
+    def end_block(self):
+        self.block.pop()
+
     def start_fun(self, fun):
-        self.func.append(len(self.functions))
         self.functions.append(fun)
+        self.block.append(self.functions[-1].block)
 
     def end_fun(self):
-        self.func.pop()
+        self.block.pop()
 
     def add_var(self, type, name, value):
         """Here `type` is a dict, `name` and `value` are str"""
@@ -95,12 +113,12 @@ class Module:
         self.type_ctx.add_binding(name, type)
         self.name_ctx.add_binding(name, fresh_name)
 
-        self.functions[self.func[-1]].add(r)
+        self.block[-1].add(r)
 
     def add_str(self, s):
         s = s.strip()
         if s:
-            self.functions[self.func[-1]].add(s)
+            self.block[-1].add(s)
 
     def __str__(self):
         import pathlib
@@ -140,8 +158,7 @@ def gen_expr(node, mod, is_return=False):
         return "%s%s" % (return_string, mod.name_ctx.lookup(node.name))
     elif isinstance(node, Block):
         ret = ""
-        mod.name_ctx.push_scope()
-        mod.type_ctx.push_scope()
+        mod.push()
 
         i = 0
         for expr in node.exprs:
@@ -150,8 +167,7 @@ def gen_expr(node, mod, is_return=False):
             ret = '%s' % gen_expr(
                 expr, mod, is_return and (i == len(node.exprs)))
 
-        mod.name_ctx.pop_scope()
-        mod.type_ctx.pop_scope()
+        mod.pop()
         return ret
 
     elif isinstance(node, Call):
@@ -161,6 +177,30 @@ def gen_expr(node, mod, is_return=False):
         mod.add_fun(node)
 
         return ''
+
+    elif isinstance(node, If):
+        mod.push()
+        cond = gen_expr(node.cond, mod)
+        # mod.start_block()
+        true = CBlock()
+        mod.block.append(true)
+        mod.push()
+        true.add(gen_expr(node.if_branch, mod, is_return))
+        mod.pop()
+        mod.end_block()
+
+        if node.else_branch is not None:
+            false = CBlock()
+            mod.block.append(false)
+            mod.push()
+            false.add(gen_expr(node.else_branch, mod, is_return))
+            mod.pop()
+            mod.end_block()
+            ret = 'if (%s) %s else %s' % (cond, true, false)
+        else:
+            ret = 'if (%s) %s' % (cond, true)
+        mod.pop()
+        return ret
 
 
 def codegen(nodes):
