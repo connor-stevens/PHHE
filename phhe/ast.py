@@ -42,7 +42,7 @@ class DictEq:
 
 
 reservedTags = ["primitive", "struct"]
-primitiveTypes = ["type", "struct", "int", "null"]
+primitiveTypes = ["type", "struct", "int", "null", "function"]
 NULL = {"primitive": "null"}
 
 
@@ -107,6 +107,76 @@ class Literal(DictEq):
 
     def type(self, ctx):
         return {"primitive": type(self.value).__name__}
+
+
+class Function(DictEq):
+    """A function definition"""
+
+    def __init__(self, name, args, body, ret_type=None):
+        """Right now, 'args' should be a tuple of (name,type)"""
+        self.name = name
+        self.args = args
+        self.body = body
+        self.ret_type = ret_type
+
+    def __repr__(self):
+        return "fun %s(%r) = %r" % (self.name, self.args, self.body)
+
+    def eval(self, ctx):
+        ctx.add_binding(self.name, self)
+
+    def type(self, ctx):
+        if self.ret_type is not None:
+            if self.body is not None:
+                ret_t = self.body.type(ctx)
+                if ret_t != self.ret_type:
+                    # I don't know if this belongs here
+                    raise TypeError('Wrong return type %r, really returns %r',
+                                    self.ret_type, ret_t)
+            else:
+                ret_t = self.ret_type
+        else:
+            if self.body is not None:
+                ret_t = self.body.type(ctx)
+            else:
+                ret_t = NULL
+        arg_t = self.args[1]
+        self_t = {'primitive': 'function', 'return': ret_t, 'argument': arg_t}
+        ctx.add_binding(self.name, self_t)
+        return self_t
+
+    def call(self, ctx, args):
+        if self.body is not None:
+            ctx.push_scope()
+            ctx.add_binding(self.args[0], args)
+            ret = self.body.eval(ctx)
+            ctx.pop_scope()
+            return ret
+
+
+class Call(DictEq):
+    """A function call `f(x)`"""
+
+    def __init__(self, function, args):
+        self.function = function
+        self.args = args
+
+    def __repr__(self):
+        return "%r(%r)" % (self.function, self.args)
+
+    def eval(self, ctx):
+        if self.function == 'print':
+            print(self.args.eval(ctx))
+        else:
+            fun = ctx.lookup(self.function)
+            return fun.call(ctx, self.args.eval(ctx))
+
+    def type(self, ctx):
+        fun = ctx.lookup(self.function)
+        if fun:
+            return fun['return']
+        else:
+            return NULL
 
 
 class BinOp(DictEq):

@@ -2,6 +2,7 @@ from context import *
 from phhe.ast import *
 from phhe.parse import parse_file
 
+
 class TestInterpreter(TestCase):
     "Tests for the simple interpreter built in to the AST"
 
